@@ -15,8 +15,8 @@ ENTRY(_start)
 RAM_START = LD_RAM_START;
 PROVIDE(LD_RAM_START = RAM_START);
 
-V_P_DIFF = OxFFFFFF8000000000;
-PHYSICAL_BASE = RAM_START + 0x00200000;
+V_P_DIFF = 0xFFFFFF8000000000;
+PHYSICAL_BASE = RAM_START + 0x80200000;
 VIRTUAL_BASE = PHYSICAL_BASE + V_P_DIFF;
 
 /*
@@ -49,7 +49,7 @@ SECTIONS
     
     
     .data : {
-        head.o(.data)
+        boot/head.o(.data)
         *(.data)
     }
 

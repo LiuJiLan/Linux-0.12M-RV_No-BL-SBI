@@ -6,7 +6,7 @@
 
 // 不再使用rCore的0xFFFFFFFF40000000U,
 // 而是改用将0x0映射到Sv39高地址的最低值
-#define V_P_DIFF    OxFFFFFF8000000000UL
+#define V_P_DIFF    0xFFFFFF8000000000U
 
 
 // 还是沿用xv6-riscv的宏

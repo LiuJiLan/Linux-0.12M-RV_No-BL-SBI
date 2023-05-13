@@ -1,4 +1,6 @@
-#include <../platform.h>
+//
+
+#include "../platform.h"
 
 .text
 

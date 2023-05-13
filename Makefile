@@ -9,7 +9,10 @@ CROSS_COMPILE = riscv64-unknown-elf-
 
 AS		= ${CROSS_COMPILE}as
 LD 		= ${CROSS_COMPILE}ld
-LDFLAGS = -s -x -M
+# LDFLAGS = -s -x -M
+# `-s`：这个选项告诉编译器/链接器去掉所有调试符号
+# `-x`：这个选项告诉链接器将所有被未引用的符号剔除
+LDFLAGS = -M
 # $(RAMDISK)参数只在main中使用, 我认为不应该放在CC指令后面
 CC 		= ${CROSS_COMPILE}gcc
 CFLAGS 	= -Wall -g -ggdb -nostdlib -fno-builtin \
@@ -76,16 +79,9 @@ Image: # boot/bootsect boot/setup tools/system tools/build # *HIL
 # 我们的head为了使用一些宏, 所以我们使用的是.S文件
 # 我们先单独给boot/head.o设置一个规则, 如果其他.s文件也要改用.S
 # 就应该设置一条.S到.s的通用规则
-boot/head.o: boot/_head.s
+boot/head.o: boot/head.S
 	$(CC) $(CFLAGS) \
 	-nostdinc -Iinclude -c -o boot/head.o boot/head.S
-
-#
-boot/_head.s: boot/head.S
-	$(CPP) -traditional boot/head.S -o boot/_head.s
-
-#boot/head.o: boot/head.S
-#	riscv64-unknown-elf-gcc -nostdlib -fno-builtin -g -ggdb -Wall -mcmodel=medany -mabi=lp64f -march=rv64imafc -c -o boot/head.o boot/head.S
 	
 
 tools/system: boot/head.o init/main.o \
@@ -139,7 +135,9 @@ lib/lib.a:
 #	$(LD86) -s -o boot/bootsect boot/bootsect.o
 
 clean:
-	echo "clean rule not implemented!"
+	#echo "clean rule not implemented!"
+	rm -f boot/*.o debug/dis.asm debug/kernel.* \
+	System.map tools/*
 #	rm -f Image System.map tmp_make core boot/bootsect boot/setup \
 #		boot/bootsect.s boot/setup.s
 #	rm -f init/*.o tools/system tools/build boot/*.o
@@ -168,14 +166,14 @@ dep:
 DEBUG = ./debug
 
 QEMU = qemu-system-riscv64
-QFLAGS = -smp 2 -M virt -bios default
+QFLAGS = -smp 1 -M virt -bios default
 QFLAGS += -m 128M -nographic
 #QFLAGS += -serial pipe:/tmp/guest
 	
-tools/system.elf: boot/head.o # init/main.o \
+tools/system.elf: boot/head.o  # init/main.o \
 		# $(ARCHIVES) $(DRIVERS) $(MATH) $(LIBS)
 	$(LD) $(LDFLAGS) -T system.ld \
-	boot/head.o \ #开发时的行
+	boot/head.o \
 	-o tools/system.elf > System.map
 #	boot/head.o init/main.o \
 #	$(ARCHIVES) \
@@ -189,12 +187,17 @@ tools/kernel.elf: tools/system.elf
 	cp tools/system.elf tools/kernel.elf
 	${OBJCOPY} -O binary tools/kernel.elf tools/kernel.bin
 	
+GDB = ${CROSS_COMPILE}gdb
+READELF = ${CROSS_COMPILE}readelf
+
+QFLAGS += -kernel tools/kernel.elf
+	
 debug: tools/kernel.elf
 	$(OBJDUMP) -D -b binary -m riscv tools/kernel.bin > $(DEBUG)/dis.asm
 	$(OBJDUMP) -S tools/kernel.elf > $(DEBUG)/kernel.asm
 	$(READELF) -a -W tools/kernel.elf > $(DEBUG)/kernel.txt
 	${QEMU} ${QFLAGS} -s -S &
-	${GDB} kernel.elf -q -x $(DEBUG)/gdbinit.txt
+	${GDB} tools/kernel.elf -q -x $(DEBUG)/gdbinit.txt
 
 
 

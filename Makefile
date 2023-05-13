@@ -8,11 +8,12 @@ RAMDISK = #-DRAMDISK=512
 CROSS_COMPILE = riscv64-unknown-elf-
 
 AS		= ${CROSS_COMPILE}as
-LD 		= ${CROSS_COMPILE}as
+LD 		= ${CROSS_COMPILE}ld
 LDFLAGS = -s -x -M
 # $(RAMDISK)参数只在main中使用, 我认为不应该放在CC指令后面
 CC 		= ${CROSS_COMPILE}gcc
-CFLAGS 	= -Wall -g -ggdb -mcmodel=medany -mabi=lp64f -march=rv64imafc
+CFLAGS 	= -Wall -g -ggdb -nostdlib -fno-builtin \
+		-mcmodel=medany -mabi=lp64f -march=rv64imafc
 CPP     = ${CROSS_COMPILE}cpp -nostdinc -Iinclude
 
 ####额外部分
@@ -45,6 +46,8 @@ LIBS	 = lib/lib.a
 %.o : %.c
 	$(CC) $(CFLAGS) \
 	-nostdinc -Iinclude -c -o $*.o $<
+%.o : %.S
+	@${CC} ${CFLAGS} -c -o $@ $<
 	
 all: Image
 
@@ -73,10 +76,16 @@ Image: # boot/bootsect boot/setup tools/system tools/build # *HIL
 # 我们的head为了使用一些宏, 所以我们使用的是.S文件
 # 我们先单独给boot/head.o设置一个规则, 如果其他.s文件也要改用.S
 # 就应该设置一条.S到.s的通用规则
-boot/head.o: boot/head.S
+boot/head.o: boot/_head.s
 	$(CC) $(CFLAGS) \
-	-nostdinc -Iinclude -c -o head.o head.S
-	
+	-nostdinc -Iinclude -c -o boot/head.o boot/head.S
+
+#
+boot/_head.s: boot/head.S
+	$(CPP) -traditional boot/head.S -o boot/_head.s
+
+#boot/head.o: boot/head.S
+#	riscv64-unknown-elf-gcc -nostdlib -fno-builtin -g -ggdb -Wall -mcmodel=medany -mabi=lp64f -march=rv64imafc -c -o boot/head.o boot/head.S
 	
 
 tools/system: boot/head.o init/main.o \
@@ -163,14 +172,17 @@ QFLAGS = -smp 2 -M virt -bios default
 QFLAGS += -m 128M -nographic
 #QFLAGS += -serial pipe:/tmp/guest
 	
-tools/system.elf: boot/head.o init/main.o \
+tools/system.elf: boot/head.o # init/main.o \
 		# $(ARCHIVES) $(DRIVERS) $(MATH) $(LIBS)
-	$(LD) $(LDFLAGS) boot/head.o init/main.o \
+	$(LD) $(LDFLAGS) -T system.ld \
+	boot/head.o \ #开发时的行
+	-o tools/system.elf > System.map
+#	boot/head.o init/main.o \
 #	$(ARCHIVES) \
 #	$(DRIVERS) \
 #	$(MATH) \
 #	$(LIBS) \
-	-o tools/system > System.map
+#	-o tools/system > System.map
 	
 tools/kernel.elf: tools/system.elf
 	#@${CC} ${CFLAGS} -T kernel.ld -o kernel.elf $^

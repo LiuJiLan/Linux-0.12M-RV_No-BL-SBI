@@ -19,16 +19,22 @@ V_P_DIFF = OxFFFFFF8000000000;
 PHYSICAL_BASE = RAM_START + 0x00200000;
 VIRTUAL_BASE = PHYSICAL_BASE + V_P_DIFF;
 
-PROVIDE(kpgtbl = PHYSICAL_BASE);
-PROVIDE(LD_RAM_START = RAM_START);
-PROVIDE(LD_RAM_START = RAM_START);
-PROVIDE(LD_RAM_START = RAM_START);
+/*
+kpg for kernel page table (2GiB huge page).
+ipg for idle(task 0) page table.
+PS: 2 is biggest page level.
+    0 is smallest page level.
+*/
+PROVIDE(kpg = PHYSICAL_BASE);
+PROVIDE(ipg2 = PHYSICAL_BASE + 4096);
+PROVIDE(ipg1 = PHYSICAL_BASE + 4096*2);
+PROVIDE(ipg0 = PHYSICAL_BASE + 4096*3);
 
 SECTIONS
 {
     . = VIRTUAL_BASE;
     .text :AT(PHYSICAL_BASE) {
-        head.o(.text)
+        boot/head.o(.text)
         /*main.o(.text)*/
         *(.text)
     }

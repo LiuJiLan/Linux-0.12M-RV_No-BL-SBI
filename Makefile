@@ -137,7 +137,7 @@ lib/lib.a:
 clean:
 	#echo "clean rule not implemented!"
 	rm -f boot/*.o debug/dis.asm debug/kernel.* \
-	System.map tools/*
+	System.map tools/* tmp_make
 #	rm -f Image System.map tmp_make core boot/bootsect boot/setup \
 #		boot/bootsect.s boot/setup.s
 #	rm -f init/*.o tools/system tools/build boot/*.o
@@ -156,9 +156,9 @@ dep:
 	sed '/\#\#\# Dependencies/q' < Makefile > tmp_make
 	(for i in init/*.c;do echo -n "init/";$(CPP) -M $$i;done) >> tmp_make
 	cp tmp_make Makefile
-	(cd fs; make dep)
-	(cd kernel; make dep)
-	(cd mm; make dep)
+#	(cd fs; make dep)
+#	(cd kernel; make dep)
+#	(cd mm; make dep)
 	
 ###########
 # 开发阶段的临时使用的一些Makefile规则
@@ -166,14 +166,14 @@ dep:
 DEBUG = ./debug
 
 QEMU = qemu-system-riscv64
-QFLAGS = -smp 1 -M virt -bios default
+QFLAGS = -smp 2 -M virt -bios default
 QFLAGS += -m 128M -nographic
 #QFLAGS += -serial pipe:/tmp/guest
 	
-tools/system.elf: boot/head.o  # init/main.o \
+tools/system.elf: boot/head.o  init/main.o #\
 		# $(ARCHIVES) $(DRIVERS) $(MATH) $(LIBS)
 	$(LD) $(LDFLAGS) -T system.ld \
-	boot/head.o \
+	boot/head.o init/main.o \
 	-o tools/system.elf > System.map
 #	boot/head.o init/main.o \
 #	$(ARCHIVES) \
@@ -191,6 +191,8 @@ GDB = ${CROSS_COMPILE}gdb
 READELF = ${CROSS_COMPILE}readelf
 
 QFLAGS += -kernel tools/kernel.elf
+
+.DEFAULT_GOAL := tools/kernel.elf
 	
 debug: tools/kernel.elf
 	$(OBJDUMP) -D -b binary -m riscv tools/kernel.bin > $(DEBUG)/dis.asm
@@ -203,3 +205,4 @@ debug: tools/kernel.elf
 
 # 不要在这之后到文件末尾间书写任何东西, Dependencies之后的部分会被dep自动刷新掉
 ### Dependencies:
+init/main.o: init/main.c init/../types.h

@@ -29,6 +29,10 @@ PROVIDE(kpg = PHYSICAL_BASE);
 PROVIDE(ipg2 = PHYSICAL_BASE + 4096);
 PROVIDE(ipg1 = PHYSICAL_BASE + 4096*2);
 PROVIDE(ipg0 = PHYSICAL_BASE + 4096*3);
+/*
+May have more ipg0.
+Let me explain in the head.S
+*/
 
 SECTIONS
 {

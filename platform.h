@@ -25,6 +25,8 @@
 #error "This code does not support situations other than RISC-V 64."
 #endif
 
+#define REGBYTES 8
+
 //extern unsigned long LD_RAM_START
 //#if LD_RAM_START != RAM_START
 //#error "Link script conflicts with RAM START in platfrom!"

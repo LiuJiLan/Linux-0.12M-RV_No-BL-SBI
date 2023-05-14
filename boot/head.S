@@ -107,6 +107,8 @@ setup_temporary_paging:
     csrw    satp, t0        //  启动分页
     sfence.vma              //  刷新快表
 
+    la      t4, kpg //  把物理地址的kpg放进t2
+
 for_gdb_virtual:
     //  用于调试
 
@@ -142,14 +144,43 @@ ipg0:
  */
 
 after_page_tables:
+setup_paging:
+    mv      t0, t4
+    la      t2, ipg2
+    mv      t1, zero
+    li      s2, 256
+1:  sd      zero, 0(t0)
+    addi    t0, t0, 8
+    addi    t2, t2, 8
+    addi    t1, t1, 1
+    blt     t1, s2, 1b
+
+    li      s2, 512
+1:  ld      t3, 0(t2)
+    sd      t3, 0(t0)
+    addi    t0, t0, 8
+    addi    t2, t2, 8
+    addi    t1, t1, 1
+    blt     t1, s2, 1b
+
+    srli    t0, t4, 12      //  右移, 空位填0
+    li      t1, 0x8 << 60   //  8代表Sv39分页模式
+    or      t0, t0, t1
+    csrw    satp, t0        //  启动分页
+    sfence.vma              //  刷新快表
+    // 这个时候使用的才是去除原地映射真正的内核页表
+    
     la      sp, user_stack
     li      t0, 0x1
     slli    t0, t0, 12
     add     sp, sp, t0
     
-//先死循环
-    nop
-    //.extern main
-    j main
+
+    mv      a0, tp
+    mv      a1, s1
+    call main
+1:  nop //永远不应该返回
+    j       1b
+
 
 

@@ -6,7 +6,10 @@
 
 // 不再使用rCore的0xFFFFFFFF40000000U,
 // 而是改用将0x0映射到Sv39高地址的最低值
-#define V_P_DIFF    0xFFFFFF8000000000U
+// 注意, rCore内存映射示意图中的0xFFFFFF8000000000
+// 为最低的高地址是错误的, 由于要求最高位扩展
+// 虚拟地址L2段的最高必须要是1
+#define V_P_DIFF    0xFFFFFFC000000000U
 
 
 // 还是沿用xv6-riscv的宏

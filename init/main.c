@@ -9,5 +9,7 @@
 size_t user_stack [ PAGE_SIZE>>3 ] ;
 
 int main(){
-    
+    while (1) {
+        
+    }
 }

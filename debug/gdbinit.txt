@@ -11,7 +11,8 @@ b for_gdb_physical
 c
 
 b main
-#b trap_vector
+b trap_vector
+#b exception
 #b trap_exit
 #在panic设断点, panic暂未实现, 用于debug
 #b panic

@@ -135,6 +135,7 @@ clean:
 	#echo "clean rule not implemented!"
 	rm -f boot/*.o debug/dis.asm debug/kernel.* \
 	System.map tools/* tmp_make
+	(cd kernel;make clean)
 #	rm -f Image System.map tmp_make core boot/bootsect boot/setup \
 #		boot/bootsect.s boot/setup.s
 #	rm -f init/*.o tools/system tools/build boot/*.o

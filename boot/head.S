@@ -175,19 +175,30 @@ setup_paging:
     li      t0, 0x1
     slli    t0, t0, 12
     add     sp, sp, t0
+    addi    sp, sp, -24
+    //  因为有空间用于scratch
+
+    //  本不应该在此处设置内核栈sscratch,
+    //  而应该在创建task 0响应数据结构的时候来处理
+    //  但是为了handle trap就必须设置好sscratch
+    csrw    sscratch, sp
     
     //  注意, 不是真的trap_vector
     //  只是沿用tvec的含义而已
     la      t0, trap_vector
     csrw    stvec, t0
 
-//  不应该在此处设置内核栈sscratch,
-//  而应该在创建task 0响应数据结构的时候来处理
-//  csrw    sscratch, sp
-    
-
+    //  临时将main作为ebreak的中断向量
+    //  仅供测试
     mv      a0, tp
     mv      a1, s1
+    la      t1, exceptions_vec
+    li      t2, 3
+    slli    t2, t2, 3
+    add     t2, t1, t2
+    la      t1, main
+    sd      t1, 0(t2)
+    
     ebreak
     call main
 1:  nop //永远不应该返回

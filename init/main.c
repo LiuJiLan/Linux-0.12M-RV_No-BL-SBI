@@ -8,7 +8,8 @@
 // Linux 0.12中是PAGE_SIZE>>2, 注意是保证4KiB大小
 size_t user_stack [ PAGE_SIZE>>3 ] ;
 
-int main(){
+// ssize_t hartid, ssize_t dtb_addr
+int main(void){
     while (1) {
         
     }

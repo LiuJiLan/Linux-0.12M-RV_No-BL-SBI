@@ -1,5 +1,3 @@
-//
-
 #include "../platform.h"
 
 /*
@@ -30,8 +28,8 @@ for_gdb_physical = V2P_WO(for_gdb_virtual)
  为什么在链接脚本中,
  */
 
-.extern kpg // kpg:
 entry:
+kpg:
     // 沿用过去的代码, 真的需要这样做吗?
     csrw    sie, zero
     csrci   sie, 0x1 << 1   //  关SIE
@@ -126,6 +124,9 @@ ipg2:
 
 ipg1:
 .skip 4096
+//  有一个可以优化的点,
+//  就是其实可以把after_page_tables放在这里
+//  反正到用户态才会真正的用到小页表
 
 ipg0:
 .skip 4096
@@ -175,12 +176,48 @@ setup_paging:
     slli    t0, t0, 12
     add     sp, sp, t0
     
+    //  注意, 不是真的trap_vector
+    //  只是沿用tvec的含义而已
+    la      t0, trap_vector
+    csrw    stvec, t0
+
+//  不应该在此处设置内核栈sscratch,
+//  而应该在创建task 0响应数据结构的时候来处理
+//  csrw    sscratch, sp
+    
 
     mv      a0, tp
     mv      a1, s1
+    ebreak
     call main
 1:  nop //永远不应该返回
     j       1b
 
 
+
+//我们在asm.S和traps.c中详细介绍中断处理时究竟发生了什么
+//int_msg:
+//    .asciz "Unknown interrupt\n\r"
+//.align 2
+//ignore_int:
+//    pushl %eax
+//    pushl %ecx
+//    pushl %edx
+//    push %ds
+//    push %es
+//    push %fs
+//    movl $0x10,%eax
+//    mov %ax,%ds
+//    mov %ax,%es
+//    mov %ax,%fs
+//    pushl $int_msg
+//    call _printk
+//    popl %eax
+//    pop %fs
+//    pop %es
+//    pop %ds
+//    popl %edx
+//    popl %ecx
+//    popl %eax
+//    iret
 

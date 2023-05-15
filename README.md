@@ -88,11 +88,85 @@ x86移植到使用单寄存器管理“指令计数器”的ISA中一大困难�
 
 ## x86中断硬件处理与RISC-V的对应
 
+简单而言, Linux0.12的中断/异常处理的开始可以分成3个阶段: 
+
+1、硬件地对栈进行处理, 并且保存部分需要的返回地址; 2、硬件地转跳到中断向量表中; 3、一些Linux的汇编语言。这些步骤完成后将转跳到C语言来处理。
+
+对于RISC-V而言, trap的处理有几点不同。
+
+首先, 即使使用中断向量表, 使用的形式也不同。80386的中断表若以表头为base, vector为index, 则转跳形式为`pc = base[vector] `; 而RISC-V中, 首先中断向量表是可选项(不是所有硬件都支持), 其次转跳形式为`pc = base + vector `; 最后RISC-V只有真正意义的中断能使用中断向量表(如果可选)。
+
+对于中断的前处理, 我采取以下步骤: 1、软件地模拟对栈的选择; 2、软件的实现trap向量表; 3、Linux汇编语言部分做部分适配。
+
+**注意: 我的做法为了防止大改导致牵一发而动全身, 代码的质量还有待静下来好好思考。**
+
+
+
+### 对栈的选择
+
 CLK-5.0中122页的文字描述与280页的图8-2。
 
 我在此并不详细讨论LDT、GDT与其中存储的TSS的具体概念和关系。我只抽象出几个结论:1、TSS位于内存中, CPU能用某种方式硬件的定位、读/写TSS中的内容。2、不严谨地认为, Linux内核只使用了TSS的ESP0和I/O权限位。
 
 - 权级不变时, 会向原栈中压入EFLAGS、CS、EIP。
+- 权级改变时, 会向ESP0中压入原SS、原ESP、EFLAGS、CS、EIP。
+
+以上步骤被硬件地发生。如果有阅读过openSBI源码, 应该能反应过来, RISC-V中用scratch(对于内核而言是sscratch)寄存器来做的一个置换操作。(EFLAG相当于xstatus寄存器; CS+EIP相当于xret寄存器; 原SS+ESP相当于sp; ESP0相当于xscratch)
+
+在UnnamedOS中, 我借鉴openSBI的同时, 由于使用每个核仅一个内核栈的形式, 是把权级改变时的指针直接放在sscratch。这次重看openSBI的代码, 发现openSBI的代码有所改变。openSBI中使用了每HART一个的`sbi_scratch`空间来存储一些信息:
+
+```c
+struct sbi_scratch {
+	/** Start (or base) address of firmware linked to OpenSBI library */
+	unsigned long fw_start;
+	/** Size (in bytes) of firmware linked to OpenSBI library */
+	unsigned long fw_size;
+	/** Offset (in bytes) of the R/W section */
+	unsigned long fw_rw_offset;
+	/** Arg1 (or 'a1' register) of next booting stage for this HART */
+	unsigned long next_arg1;
+	/** Address of next booting stage for this HART */
+	unsigned long next_addr;
+	/** Privilege mode of next booting stage for this HART */
+	unsigned long next_mode;
+	/** Warm boot entry point address for this HART */
+	unsigned long warmboot_addr;
+	/** Address of sbi_platform */
+	unsigned long platform_addr;
+	/** Address of HART ID to sbi_scratch conversion function */
+	unsigned long hartid_to_scratch;
+	/** Address of trap exit function */
+	unsigned long trap_exit;
+	/** Temporary storage */
+	unsigned long tmp0;
+	/** Options for OpenSBI library */
+	unsigned long options;
+};
+```
+
+但, 有无必要进行这种改进, 另说。
+
+
+
+
+
+### 中断向量的实现
+
+我考虑过几种方案: 1、`kernel_scratch`中保存更多的临时变量, 然后用纯汇编语言实现中断向量表的转跳; 2、寄存器压栈, C语言处理所有trap, 寄存器弹出, 实现中断向量的转跳。
+
+这两个方案, 前者实现麻烦; 后者有一个问题, RISC-V并没有真的将数据压到栈中, 而是使用CSR寄存器硬件地保存了相应的值。而C语言依赖栈(sp), 如果trap本身与sp相关, 采用C语言做转跳将有陷入死循环的可能。
+
+所以我打算采取结合这两者:
+
+首先对于所有的trap先用汇编处理, 1、对于异常, 直接转跳到为异常(软件设置的)向量表; 2、对于中断, 分别处理: 2.1其中对于外部中断, 使用保存所有寄存器然后用C语言处理PLIC问题。2.2其他中断使用使用任然使用汇编处理。
+
+对于PLIC的外部中断, 再给其分配一个与芯片PLIC能处理外设大小的中断向量表(这个值应该在platform.h中定义)。
+
+
+
+### 中断中汇编的作用
+
+首先说结论, 对于
 
 
 

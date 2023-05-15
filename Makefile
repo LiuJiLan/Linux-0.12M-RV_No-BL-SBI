@@ -31,7 +31,7 @@ OBJDUMP = ${CROSS_COMPILE}objdump
 #SWAP_DEV=/dev/hd2
 
 
-ARCHIVES = kernel/kernel.o mm/mm.o fs/fs.o
+ARCHIVES = kernel/kernel.o # mm/mm.o fs/fs.o
 DRIVERS  = kernel/blk_drv/blk_drv.a kernel/chr_drv/chr_drv.a
 MATH	 = kernel/math/math.a
 LIBS	 = lib/lib.a
@@ -44,13 +44,13 @@ LIBS	 = lib/lib.a
 #.c.s:	# 我没有看到源码中有相应规则从.c到.s, 所以注释掉这一规则, 如果后续有问题再解开
 #	$(CC) $(CFLAGS) \
 #	-nostdinc -Iinclude -S -o $*.s $<
-%.o : %.s
-	$(AS) -c -o $*.o $<
+#%.o : %.s
+#	$(AS) -c -o $*.o $<
 %.o : %.c
 	$(CC) $(CFLAGS) \
 	-nostdinc -Iinclude -c -o $*.o $<
-%.o : %.S
-	@${CC} ${CFLAGS} -c -o $@ $<
+%.o : %.S	# 不在使用.s, 全部使用能预处理的.S
+	@${CC} ${CFLAGS} -c -o $*.o $<
 	
 all: Image
 
@@ -76,9 +76,6 @@ Image: # boot/bootsect boot/setup tools/system tools/build # *HIL
 #	-o tools/build tools/build.c
 
 
-# 我们的head为了使用一些宏, 所以我们使用的是.S文件
-# 我们先单独给boot/head.o设置一个规则, 如果其他.s文件也要改用.S
-# 就应该设置一条.S到.s的通用规则
 boot/head.o: boot/head.S
 	$(CC) $(CFLAGS) \
 	-nostdinc -Iinclude -c -o boot/head.o boot/head.S
@@ -170,10 +167,10 @@ QFLAGS = -smp 2 -M virt -bios default
 QFLAGS += -m 128M -nographic
 #QFLAGS += -serial pipe:/tmp/guest
 	
-tools/system.elf: boot/head.o  init/main.o #\
+tools/system.elf: boot/head.o  init/main.o kernel/kernel.o \
 		# $(ARCHIVES) $(DRIVERS) $(MATH) $(LIBS)
 	$(LD) $(LDFLAGS) -T system.ld \
-	boot/head.o init/main.o \
+	boot/head.o init/main.o kernel/kernel.o \
 	-o tools/system.elf > System.map
 #	boot/head.o init/main.o \
 #	$(ARCHIVES) \

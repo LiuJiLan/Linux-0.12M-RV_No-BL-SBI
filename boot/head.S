@@ -182,6 +182,9 @@ setup_paging:
     //  而应该在创建task 0响应数据结构的时候来处理
     //  但是为了handle trap就必须设置好sscratch
     csrw    sscratch, sp
+    //  sscratch对于我们的系统是必须的
+    //  它在模拟80386的硬件中断控制流程起到重要作用
+    //  (同时也是它的设计用途)
     
     //  注意, 不是真的trap_vector
     //  只是沿用tvec的含义而已

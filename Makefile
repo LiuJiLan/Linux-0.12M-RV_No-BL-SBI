@@ -155,7 +155,7 @@ dep:
 	(for i in init/*.c;do echo -n "init/";$(CPP) -M $$i;done) >> tmp_make
 	cp tmp_make Makefile
 #	(cd fs; make dep)
-#	(cd kernel; make dep)
+	(cd kernel; make dep)
 #	(cd mm; make dep)
 	
 ###########
@@ -203,4 +203,4 @@ debug: tools/kernel.elf
 
 # 不要在这之后到文件末尾间书写任何东西, Dependencies之后的部分会被dep自动刷新掉
 ### Dependencies:
-init/main.o: init/main.c init/../types.h
+init/main.o: init/main.c include/arch/types.h

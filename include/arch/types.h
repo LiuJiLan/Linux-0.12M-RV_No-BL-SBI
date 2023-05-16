@@ -28,5 +28,4 @@ typedef long                ssize_t;
 #define PGROUNDUP(sz)  (((sz)+PGSIZE-1) & ~(PGSIZE-1))
 #define PGROUNDDOWN(a) (((a)) & ~(PGSIZE-1))
 
-
 #endif /* types_h */

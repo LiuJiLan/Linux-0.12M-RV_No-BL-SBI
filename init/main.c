@@ -1,4 +1,4 @@
-#include "../types.h"
+#include <arch/types.h>
 
 // 临时使用
 #define PAGE_SIZE PGSIZE

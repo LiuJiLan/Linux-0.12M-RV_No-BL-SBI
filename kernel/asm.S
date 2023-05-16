@@ -1,5 +1,113 @@
 #include "../platform.h"
 
+//  保存所有寄存器
+//  除了sp
+.macro  SAVE_REGS
+    //  除x0之外的31个, 另外还有
+    //  sstatus, sepc, scause, stavl
+    addi    sp, sp, -35*REGBYTES
+    REG_S    x1, 0*REGBYTES(sp)
+    //  栈是连续的, 不应该由(trap的)上下文来维护
+    //  但如果是进程切换的上下文中的栈, 是需要维护的
+    //  REG_S    x2, 1*REGBYTES(sp)
+    REG_S    x3, 2*REGBYTES(sp)
+    REG_S    x4, 3*REGBYTES(sp)
+    REG_S    x5, 3*REGBYTES(sp)
+    //  t1、t2在sscratch的栈中
+    //  REG_S    x6, 5*REGBYTES(sp)
+    //  REG_S    x7, 6*REGBYTES(sp)
+    REG_S    x8, 7*REGBYTES(sp)
+    REG_S    x9, 8*REGBYTES(sp)
+    REG_S    x10, 9*REGBYTES(sp)
+    REG_S    x11, 10*REGBYTES(sp)
+    REG_S    x12, 11*REGBYTES(sp)
+    REG_S    x13, 12*REGBYTES(sp)
+    REG_S    x14, 13*REGBYTES(sp)
+    REG_S    x15, 14*REGBYTES(sp)
+    REG_S    x16, 15*REGBYTES(sp)
+    REG_S    x17, 16*REGBYTES(sp)
+    REG_S    x18, 17*REGBYTES(sp)
+    REG_S    x19, 18*REGBYTES(sp)
+    REG_S    x20, 19*REGBYTES(sp)
+    REG_S    x21, 20*REGBYTES(sp)
+    REG_S    x22, 21*REGBYTES(sp)
+    REG_S    x23, 22*REGBYTES(sp)
+    REG_S    x24, 23*REGBYTES(sp)
+    REG_S    x25, 24*REGBYTES(sp)
+    REG_S    x26, 25*REGBYTES(sp)
+    REG_S    x27, 26*REGBYTES(sp)
+    REG_S    x28, 27*REGBYTES(sp)
+    REG_S    x29, 28*REGBYTES(sp)
+    REG_S    x30, 29*REGBYTES(sp)
+    REG_S    x31, 30*REGBYTES(sp)
+    
+    csrr     t0, sscratch
+    ld       t1, 0*REGBYTES(t0)
+    ld       t2, 1*REGBYTES(t0)
+    REG_S    t1, 5*REGBYTES(sp)
+    REG_S    t2, 6*REGBYTES(sp)
+
+    csrr     t0, sstatus
+    REG_S    t0, 31*REGBYTES(sp)
+    csrr     t0, sepc
+    REG_S    t0, 32*REGBYTES(sp)
+    csrr     t0, scause
+    REG_S    t0, 33*REGBYTES(sp)
+    csrr     t0, stval
+    REG_S    t0, 34*REGBYTES(sp)
+.endm
+
+//  恢复所有的寄存器, 除了sp
+.macro  RESTORE_REGS
+    REG_L    x1, 0*REGBYTES(sp)
+    //REG_L    x2, 1*REGBYTES(sp) // sp本身
+    REG_L    x3, 2*REGBYTES(sp)
+    REG_L    x4, 3*REGBYTES(sp)
+    //  t0用于存取csr
+    //REG_L    x5, 4*REGBYTES(sp)
+    REG_L    x6, 5*REGBYTES(sp)
+    REG_L    x7, 6*REGBYTES(sp)
+    REG_L    x8, 7*REGBYTES(sp)
+    REG_L    x9, 8*REGBYTES(sp)
+    REG_L    x10, 9*REGBYTES(sp)
+    REG_L    x11, 10*REGBYTES(sp)
+    REG_L    x12, 11*REGBYTES(sp)
+    REG_L    x13, 12*REGBYTES(sp)
+    REG_L    x14, 13*REGBYTES(sp)
+    REG_L    x15, 14*REGBYTES(sp)
+    REG_L    x16, 15*REGBYTES(sp)
+    REG_L    x17, 16*REGBYTES(sp)
+    REG_L    x18, 17*REGBYTES(sp)
+    REG_L    x19, 18*REGBYTES(sp)
+    REG_L    x20, 19*REGBYTES(sp)
+    REG_L    x21, 20*REGBYTES(sp)
+    REG_L    x22, 21*REGBYTES(sp)
+    REG_L    x23, 22*REGBYTES(sp)
+    REG_L    x24, 23*REGBYTES(sp)
+    REG_L    x25, 24*REGBYTES(sp)
+    REG_L    x26, 25*REGBYTES(sp)
+    REG_L    x27, 26*REGBYTES(sp)
+    REG_L    x28, 27*REGBYTES(sp)
+    REG_L    x29, 28*REGBYTES(sp)
+    REG_L    x30, 29*REGBYTES(sp)
+    REG_L    x31, 30*REGBYTES(sp)
+
+    REG_L    t0, 31*REGBYTES(sp)
+    csrw     t0, sstatus
+    REG_L    t0, 32*REGBYTES(sp)
+    csrw     t0, sepc
+    REG_L    t0, 33*REGBYTES(sp)
+    csrw     t0, scause
+    REG_L    t0, 34*REGBYTES(sp)
+    csrw     t0, stval
+    
+    REG_L    x5, 4*REGBYTES(sp)
+.endm
+
+
+
+
+
 .text
 .global trap_vector
 .align 2    //  4 bytes 对齐
@@ -11,7 +119,6 @@ set_correct_sp:
     csrrw   t0, sscratch, t0
     sd      t1, 0*REGBYTES(t0)
     sd      t2, 1*REGBYTES(t0)
-    sd      sp, 2*REGBYTES(t0)
     mv      t1, t0
     mv      t2, sp
     //  可能会有些浪费寄存器,
@@ -31,6 +138,22 @@ set_correct_sp:
     //  运行到这里, sp处于正确的栈顶
     //  t1存着sscratch, t2存着过去的sp
     //  此时用t0维护着3个值
+    
+    //  当sp==t2, 意味着权级没有改变
+    beq     sp, t2, 1f
+    sd      sp, 2*REGBYTES(t0)
+    //  注意, sp的保存的含义与t0、t1、t2不一样
+    //  他们的作用是作为临时变量
+    //  而sp的保存是为了对于x86对原(用户态)栈的保存
+    //  这是是为了在恢复上下文的时候有切实的依据
+    
+    
+    //  选择在此处将sscratch换回来
+    //  因为理论上之前模拟的是硬件过程
+    //  是有可能再次遇到异常的
+    //  sscratch应该在正确的值保证处理
+1:
+    csrrw t0, sscratch, t0
 
 //  模拟80386的中断向量
 //  外设中断在其C语言代码中处理
@@ -63,10 +186,24 @@ exception:
     ld      t2, 0(t1)   // target function
     jr      t2
 unknown_trap:
-    nop
-    j       unknown_trap
+    j       unknown_trap_handler
+
+unknown_trap_handler:
     
-    
-    
-    
+    // 以上代码模拟了80386的中断过程
+    // sscratch的栈中存着t1、t2、原sp
+
+
+//  Linux 0.12中所有的错误处理流程如下
+//  保存所有寄存器
+//  调用C语言, 打印以下内容:
+//  trap前地址(EIP), 状态寄存器(EFLAGS)
+//  trap前栈指针(ESP), 栈内容(如果是用户栈)
+//  打印当前进程号与错误代码
+//  打印用户栈
+//  (但是如果是双错误也能打印吗?)
+//  (我们实现的时候, 做一个权级的判断)
+//  调用do_exit(11) 发送信号
+
+
     

@@ -29,6 +29,8 @@
 #endif
 
 #define REGBYTES 8
+#define REG_S       sd
+#define REG_L       ld
 
 //extern unsigned long LD_RAM_START
 //#if LD_RAM_START != RAM_START

@@ -1,5 +1,5 @@
 #include <arch/types.h>
-
+#include <linux/mm.h>   //  被放在<linux/sched.h>里
 #include <asm/system.h>
 #include <linux/config.h>
 
@@ -7,8 +7,7 @@
 extern void trap_init(void);
 extern void mem_init(size_t start_mem, size_t end_mem);
 
-// 临时使用
-#define PAGE_SIZE PGSIZE
+
 // 注意, 我们用这种方式完成了64bits的对齐
 // 不要使用uint8 user_stack[PAGE_SIZE]来替代
 // 另外, 如果非gcc编译器以及编译优化后是不保证对齐的
@@ -26,7 +25,7 @@ int main(void){
     memory_start = RAM_START;
     memory_end = RAM_START + RAM_SIZE;
     //  起点+SBI+4MiB
-    buffer_memory_end = RAM_START + (2UL << 20) + (4UL << 20);
+    buffer_memory_end = RAM_START + (2UL << 20) + (8UL << 20);
     main_memory_start = buffer_memory_end;
 
 //  我们的系统暂不支持RAMDISK, 不要使用RAMDISK编译参数!!!

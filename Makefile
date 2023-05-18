@@ -31,7 +31,7 @@ OBJDUMP = ${CROSS_COMPILE}objdump
 #SWAP_DEV=/dev/hd2
 
 
-ARCHIVES = kernel/kernel.o # mm/mm.o fs/fs.o
+ARCHIVES = kernel/kernel.o mm/mm.o #fs/fs.o
 DRIVERS  = kernel/blk_drv/blk_drv.a kernel/chr_drv/chr_drv.a
 MATH	 = kernel/math/math.a
 LIBS	 = lib/lib.a
@@ -136,6 +136,7 @@ clean:
 	rm -f init/*.o boot/*.o debug/dis.asm debug/kernel.* \
 	System.map tools/* tmp_make
 	(cd kernel;make clean)
+	(cd mm;make clean)
 #	rm -f Image System.map tmp_make core boot/bootsect boot/setup \
 #		boot/bootsect.s boot/setup.s
 #	rm -f init/*.o tools/system tools/build boot/*.o
@@ -156,7 +157,7 @@ dep:
 	cp tmp_make Makefile
 #	(cd fs; make dep)
 	(cd kernel; make dep)
-#	(cd mm; make dep)
+	(cd mm; make dep)
 	
 ###########
 # 开发阶段的临时使用的一些Makefile规则
@@ -168,10 +169,10 @@ QFLAGS = -smp 2 -M virt -bios default
 QFLAGS += -m 128M -nographic
 #QFLAGS += -serial pipe:/tmp/guest
 	
-tools/system.elf: boot/head.o  init/main.o kernel/kernel.o \
+tools/system.elf: boot/head.o  init/main.o $(ARCHIVES) \
 		# $(ARCHIVES) $(DRIVERS) $(MATH) $(LIBS)
 	$(LD) $(LDFLAGS) -T system.ld \
-	boot/head.o init/main.o kernel/kernel.o \
+	boot/head.o init/main.o $(ARCHIVES) \
 	-o tools/system.elf > System.map
 #	boot/head.o init/main.o \
 #	$(ARCHIVES) \
@@ -203,4 +204,6 @@ debug: tools/kernel.elf
 
 # 不要在这之后到文件末尾间书写任何东西, Dependencies之后的部分会被dep自动刷新掉
 ### Dependencies:
-init/main.o: init/main.c include/arch/types.h
+init/main.o: init/main.c include/arch/types.h include/asm/system.h \
+ include/arch/riscv.h include/arch/types.h include/linux/config.h \
+ include/linux/../../platform.h

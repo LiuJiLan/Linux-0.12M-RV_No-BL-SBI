@@ -65,5 +65,5 @@ SECTIONS
             *(.bss)
     }
     
-    PROVIDE(kend = .);
+    PROVIDE(end = .);
 }

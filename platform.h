@@ -20,6 +20,9 @@
 #define V2P_WO(x) ((x) - V_P_DIFF)    // same as V2P, but without casts //  不带类型转换
 #define P2V_WO(x) ((x) + V_P_DIFF)    // same as P2V, but without casts
 
+#define RAM_START 0x80000000UL
+#define RAM_SIZE  0x08000000UL  // 128MiB
+
 
 // 我们把一些预处理的警告也放在这里
 // 说实话我不知道该把他们放在哪

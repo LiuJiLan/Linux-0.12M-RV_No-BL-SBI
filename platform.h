@@ -28,13 +28,13 @@
 #error "This code does not support situations other than RISC-V 64."
 #endif
 
-#define REGBYTES 8
+#define REGBYTES    8
 #define REG_S       sd
 #define REG_L       ld
 
 //extern unsigned long LD_RAM_START
 //#if LD_RAM_START != RAM_START
-//#error "Link script conflicts with RAM START in platfrom!"
+//#error "Link script conflicts with RAM START in platform!"
 //#endif
 
 

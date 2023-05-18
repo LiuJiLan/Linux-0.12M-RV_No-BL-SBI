@@ -11,6 +11,10 @@
 #define SSTATUS_SIE (1L << 1)  // Supervisor Interrupt Enable
 #define SSTATUS_UIE (1L << 0)  // User Interrupt Enable
 
+static inline void ebreak(void){
+  asm volatile("ebreak"::);
+}
+
 static inline regs_t r_sstatus() {
   regs_t x;
   asm volatile("csrr %0, sstatus" : "=r" (x) );

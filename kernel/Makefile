@@ -45,4 +45,4 @@ dep:
 	
 
 ### Dependencies:
-traps.s traps.o: traps.c ../include/arch/types.h
+traps.s traps.o: traps.c ../include/arch/types.h ../include/asm/system.h

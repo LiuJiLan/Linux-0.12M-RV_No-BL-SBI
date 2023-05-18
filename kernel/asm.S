@@ -1,4 +1,4 @@
-#include "../platform.h"
+#include <linux/config.h>
 
 //  保存所有寄存器
 //  除了sp
@@ -63,7 +63,7 @@
     //REG_L    x2, 1*REGBYTES(sp) // sp本身
     REG_L    x3, 2*REGBYTES(sp)
     REG_L    x4, 3*REGBYTES(sp)
-    //  t0用于存取csr
+    //  t0用于存取csr, 稍后保存
     //REG_L    x5, 4*REGBYTES(sp)
     REG_L    x6, 5*REGBYTES(sp)
     REG_L    x7, 6*REGBYTES(sp)
@@ -93,17 +93,31 @@
     REG_L    x31, 30*REGBYTES(sp)
 
     REG_L    t0, 31*REGBYTES(sp)
-    csrw     t0, sstatus
+    csrw     sstatus, t0
     REG_L    t0, 32*REGBYTES(sp)
-    csrw     t0, sepc
+    csrw     sepc, t0
     REG_L    t0, 33*REGBYTES(sp)
-    csrw     t0, scause
+    csrw     scause, t0
     REG_L    t0, 34*REGBYTES(sp)
-    csrw     t0, stval
+    csrw     stval, t0
     
     REG_L    x5, 4*REGBYTES(sp)
 .endm
 
+.macro  RESTORE_SP_AND_SRET
+    csrrw    t0, sscratch, t0
+    sd       t1, 0*REGBYTES(t0)
+    sd       t2, 1*REGBYTES(t0)
+    csrr     t1, sstatus
+    srli     t1, t1, 8
+    andi     t1, t1, 0b01
+    bnez     t1, 1f
+    ld       sp, 2*REGBYTES(t0)
+1:  ld       t1, 0*REGBYTES(t0)
+    ld       t2, 1*REGBYTES(t0)
+    csrrw    t0, sscratch, t0
+    sret
+.endm
 
 
 
@@ -125,7 +139,7 @@ set_correct_sp:
     //  可能需要优化
 
     csrr    sp, sstatus
-    srl     sp, sp, 11
+    srli    sp, sp, 8
     andi    sp, sp, 0b01
     slti    sp, sp, 0b01
     addi    sp, sp, -1
@@ -147,7 +161,6 @@ set_correct_sp:
     //  而sp的保存是为了对于x86对原(用户态)栈的保存
     //  这是是为了在恢复上下文的时候有切实的依据
     
-    
     //  选择在此处将sscratch换回来
     //  因为理论上之前模拟的是硬件过程
     //  是有可能再次遇到异常的
@@ -159,29 +172,29 @@ set_correct_sp:
 //  外设中断在其C语言代码中处理
 jump_to_trap_vector:
     csrr    t1, scause
-    li      t2, 0xfff
+    li      t2, 0xff
     not     t2, t2
     srli    t2, t2, 1       // t2 = 0x0ff...ff00
     and     t1, t1, t2
     bnez    t1, unknown_trap
     csrr    t1, scause
-    li      t2, 0xff
+    li      t2, 0xf
     not     t2, t2      // t2 = 0xff..f00
     and     t1, t1, t2
     beqz    t1, exception
 interrupt:
     csrr    t1, scause
-    li      t2, 0xff
+    li      t2, 0xf
     and     t2, t1, t2
-    la      t1, interrupts_vec
-    slli    t2, t2, 3       // interrupts_vec[num]
+    la      t1, clint_vec
+    slli    t2, t2, 3       // clint_vec[num]
     add     t1, t1, t2
     ld      t2, 0(t1)   // target function
     jr      t2
 exception:
     csrr    t1, scause
     slli    t2, t1, 3
-    la      t1, exceptions_vec
+    la      t1, except_vec
     add     t1, t1, t2
     ld      t2, 0(t1)   // target function
     jr      t2
@@ -205,5 +218,16 @@ unknown_trap_handler:
 //  (我们实现的时候, 做一个权级的判断)
 //  调用do_exit(11) 发送信号
 
-
+//  暂时放这里, 之后汇总集中声明
+.global reversed_trap
+reversed_trap:
+    la      t1, do_reversed_trap
+    sd      t1, -36*REGBYTES(sp)
+general_trap_handle:
+    SAVE_REGS
+    mv      a0, sp              // 参数
+    ld      t0, -REGBYTES(sp)
+    jalr    t0
+    RESTORE_REGS
+    RESTORE_SP_AND_SRET
     

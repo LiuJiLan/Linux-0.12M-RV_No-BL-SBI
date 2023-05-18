@@ -1,4 +1,4 @@
-#include "../platform.h"
+#include <linux/config.h>
 
 /*
  head中需要注意物理地址和虚拟地址。
@@ -191,18 +191,6 @@ setup_paging:
     la      t0, trap_vector
     csrw    stvec, t0
 
-    //  临时将main作为ebreak的中断向量
-    //  仅供测试
-    mv      a0, tp
-    mv      a1, s1
-    la      t1, exceptions_vec
-    li      t2, 3
-    slli    t2, t2, 3
-    add     t2, t1, t2
-    la      t1, main
-    sd      t1, 0(t2)
-    
-    ebreak
     call main
 1:  nop //永远不应该返回
     j       1b

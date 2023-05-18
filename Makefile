@@ -133,7 +133,7 @@ lib/lib.a:
 
 clean:
 	#echo "clean rule not implemented!"
-	rm -f boot/*.o debug/dis.asm debug/kernel.* \
+	rm -f init/*.o boot/*.o debug/dis.asm debug/kernel.* \
 	System.map tools/* tmp_make
 	(cd kernel;make clean)
 #	rm -f Image System.map tmp_make core boot/bootsect boot/setup \

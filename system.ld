@@ -10,7 +10,7 @@ ENTRY(_start)
 /*
 我本想能让RAM_START直接从platform.h引入
 但是似乎没有什么好办法
-退而其次, 在platfrom中做一次判断
+退而其次, 在platform中做一次判断
 */
 RAM_START = LD_RAM_START;
 PROVIDE(LD_RAM_START = RAM_START);

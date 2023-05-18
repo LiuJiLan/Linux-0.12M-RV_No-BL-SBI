@@ -1,4 +1,4 @@
-// 先放这, 放platfrom里面导致.S报错
+// 先放这, 放platform里面导致.S报错
 #ifndef types_h
 #define types_h
 

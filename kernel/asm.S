@@ -176,7 +176,7 @@ jump_to_trap_vector:
     not     t2, t2
     srli    t2, t2, 1       // t2 = 0x0ff...ff00
     and     t1, t1, t2
-    bnez    t1, unknown_trap
+    bnez    t1, bad_CLINT_trap
     csrr    t1, scause
     li      t2, 0xf
     not     t2, t2      // t2 = 0xff..f00
@@ -186,6 +186,8 @@ interrupt:
     csrr    t1, scause
     li      t2, 0xf
     and     t2, t1, t2
+    li      t1, 0x9         //  SEIP
+    beq     t1, t2, extern_interrupt
     la      t1, clint_vec
     slli    t2, t2, 3       // clint_vec[num]
     add     t1, t1, t2
@@ -198,14 +200,17 @@ exception:
     add     t1, t1, t2
     ld      t2, 0(t1)   // target function
     jr      t2
-unknown_trap:
-    j       unknown_trap_handler
-
-unknown_trap_handler:
-    
+extern_interrupt:
+    li      t1, BOOT_HART_PLIC_SCLAIM
+    lw      t2, 0(t1)   // Claim from PLIC
+    la      t1, plic_vec
+    slli    t2, t2, 3       // plic_vec[num]
+    add     t1, t1, t2
+    ld      t2, 0(t1)   // target function
+    jr      t2
     // 以上代码模拟了80386的中断过程
     // sscratch的栈中存着t1、t2、原sp
-
+    
 
 //  Linux 0.12中所有的错误处理流程如下
 //  保存所有寄存器
@@ -217,11 +222,8 @@ unknown_trap_handler:
 //  (但是如果是双错误也能打印吗?)
 //  (我们实现的时候, 做一个权级的判断)
 //  调用do_exit(11) 发送信号
-
-//  暂时放这里, 之后汇总集中声明
-.global reversed_trap
-reversed_trap:
-    la      t1, do_reversed_trap
+bad_CLINT_trap: //  Bad means should never happpen!
+    la      t1, do_bad_CLINT_trap
     sd      t1, -36*REGBYTES(sp)
 general_trap_handle:
     SAVE_REGS
@@ -230,4 +232,11 @@ general_trap_handle:
     jalr    t0
     RESTORE_REGS
     RESTORE_SP_AND_SRET
+    
+//  暂时放这里, 之后汇总集中声明
+.global default_trap_handler
+default_trap_handler:
+    la      t1, do_default_trap_handler
+    sd      t1, -36*REGBYTES(sp)
+    j       general_trap_handle
     

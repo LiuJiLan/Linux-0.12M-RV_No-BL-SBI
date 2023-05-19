@@ -1,9 +1,12 @@
 #include <arch/types.h>
 #include <asm/system.h>
+#include <linux/config.h>
 
 size_t clint_vec[16];   //  core interrupt from CLINT
 size_t except_vec[16];  //  exceptions
-size_t plic_vec[16];
+//+1表示用于无中断的0号
+//0号也作为数组中一个可以加载的函数
+size_t plic_vec[NR_PLIC_SOURCE+1];
 
 struct trap_regs {
     size_t ra;
@@ -43,9 +46,20 @@ struct trap_regs {
     size_t stval;
 };
 
-void reversed_trap(void);
+void default_trap_handler(void);
 
-void do_reversed_trap(struct trap_regs * sp) {
+void do_bad_CLINT_trap(struct trap_regs * sp) {
+    //  要使用0x1UL, 否则会产生警告
+    // printk("Should happen from CLINT ")
+    size_t musk = 0x1UL << (sizeof(size_t)*8-1);
+    if (sp->scause & musk) {    //  中断
+        //printf("");
+    } else {
+        sp->sepc += 4;
+    }
+}
+
+void do_default_trap_handler(struct trap_regs * sp) {
     //  要使用0x1UL, 否则会产生警告
     size_t musk = 0x1UL << (sizeof(size_t)*8-1);
     if (sp->scause & musk) {    //  中断
@@ -63,8 +77,8 @@ void trap_init(void) {
     int i;
     
     for (i = 0; i < 16; i++) {
-        set_clint_vec(i, &reversed_trap);
-        set_except_vec(i, &reversed_trap);
+        set_clint_vec(i, &default_trap_handler);
+        set_except_vec(i, &default_trap_handler);
     }
 }
 

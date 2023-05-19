@@ -39,4 +39,5 @@ dep:
     
 
 ### Dependencies:
-memory.s memory.o: memory.c ../include/arch/types.h
+memory.s memory.o: memory.c ../include/arch/types.h ../include/linux/mm.h \
+ ../include/linux/config.h ../include/linux/../../platform.h

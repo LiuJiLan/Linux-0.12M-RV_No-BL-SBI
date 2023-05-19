@@ -2,6 +2,7 @@
 #include <linux/mm.h>   //  被放在<linux/sched.h>里
 #include <asm/system.h>
 #include <linux/config.h>
+#include <debug.h>
 
 // 临时放置在这里
 extern void trap_init(void);
@@ -35,6 +36,7 @@ int main(void){
     mem_init(main_memory_start,memory_end);
     trap_init();
     ebreak();
+    reach_here("About to spin!");
     while (1) {
         
     }

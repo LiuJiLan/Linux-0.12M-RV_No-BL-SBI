@@ -26,6 +26,11 @@ This repository is a modified version of the Linux kernel 0.12 for the RISC-V ar
 - 数学协处理器
 - 软盘驱动
   - 如果要上实体板子, 软盘驱动的主设备号可能留给SD卡
+- SMP支持
+  - Linux0.12没有用于处理多核的锁
+  - 我也没时间折腾(如果有朋友感兴趣可以试试)
+  - 改写代码中用于外部中断(PLIC)的部分是对启动核写死的, 如果改写要改为一个与启动核有关的函数(见我[RVOS在VF2上的移植](https://github.com/LiuJiLan/RVOS_On_VisionFive2))
+  
 
 
 

@@ -204,6 +204,7 @@ debug: tools/kernel.elf
 
 # 不要在这之后到文件末尾间书写任何东西, Dependencies之后的部分会被dep自动刷新掉
 ### Dependencies:
-init/main.o: init/main.c include/arch/types.h include/asm/system.h \
- include/arch/riscv.h include/arch/types.h include/linux/config.h \
- include/linux/../../platform.h
+init/main.o: init/main.c include/arch/types.h include/linux/mm.h \
+ include/linux/config.h include/linux/../../platform.h \
+ include/asm/system.h include/arch/riscv.h include/arch/types.h \
+ include/debug.h

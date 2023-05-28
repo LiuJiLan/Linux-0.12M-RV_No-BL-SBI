@@ -13,6 +13,8 @@ c
 b main
 b trap_vector
 b reach_here
+b gdb_print
+
 #b exception
 #b trap_exit
 #在panic设断点, panic暂未实现, 用于debug

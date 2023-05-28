@@ -169,10 +169,10 @@ QFLAGS = -smp 2 -M virt -bios default
 QFLAGS += -m 128M -nographic
 #QFLAGS += -serial pipe:/tmp/guest
 	
-tools/system.elf: boot/head.o  init/main.o $(ARCHIVES) \
+tools/system.elf: boot/head.o  init/main.o $(ARCHIVES) $(DRIVERS) \
 		# $(ARCHIVES) $(DRIVERS) $(MATH) $(LIBS)
 	$(LD) $(LDFLAGS) -T system.ld \
-	boot/head.o init/main.o $(ARCHIVES) \
+	boot/head.o init/main.o $(ARCHIVES) $(DRIVERS) \
 	-o tools/system.elf > System.map
 #	boot/head.o init/main.o \
 #	$(ARCHIVES) \

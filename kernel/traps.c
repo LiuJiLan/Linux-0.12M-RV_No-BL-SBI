@@ -1,6 +1,7 @@
 #include <arch/types.h>
 #include <asm/system.h>
 #include <linux/config.h>
+#include <debug.h>
 
 size_t clint_vec[16];   //  core interrupt from CLINT
 size_t except_vec[16];  //  exceptions
@@ -8,6 +9,8 @@ size_t except_vec[16];  //  exceptions
 //0号也作为数组中一个可以加载的函数
 size_t plic_vec[NR_PLIC_SOURCE+1];
 
+//  Linux 0.12的错误处理中要保存所有的寄存器
+//  为了让错误处理程序能打印出错误
 struct trap_regs {
     size_t ra;
     size_t sp;
@@ -53,7 +56,7 @@ void do_bad_CLINT_trap(struct trap_regs * sp) {
     // printk("Should happen from CLINT ")
     size_t musk = 0x1UL << (sizeof(size_t)*8-1);
     if (sp->scause & musk) {    //  中断
-        //printf("");
+        gdb_print("Impossible trap from CLINT.");
     } else {
         sp->sepc += 4;
     }
@@ -77,7 +80,12 @@ void trap_init(void) {
     int i;
     
     for (i = 0; i < 16; i++) {
-        set_clint_vec(i, &default_trap_handler);
+        set_clint_vec(i, &do_bad_CLINT_trap);
+    }
+    //时钟中断与核间中断, 其他不可能发生或已提前转跳(外部中断)
+    set_clint_vec(1, &default_trap_handler);
+    //set_clint_vec(5, &do_bad_CLINT_trap);
+    for (i = 0; i < 16; i++) {
         set_except_vec(i, &default_trap_handler);
     }
 }

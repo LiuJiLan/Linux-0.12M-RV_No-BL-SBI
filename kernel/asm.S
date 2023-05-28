@@ -2,6 +2,10 @@
 
 //  保存所有寄存器
 //  除了sp
+//  给阅读我代码的人:
+//  你可能会疑惑为什么栈里面留了sp的位置, 但是没有加存
+//  1、有一些代码片段是从我之前的项目中粘过来的, 懒得改
+//  2、我没有想好是就把栈留在scratch结构里就好了还是要入栈
 .macro  SAVE_REGS
     //  除x0之外的31个, 另外还有
     //  sstatus, sepc, scause, stavl
@@ -102,6 +106,7 @@
     csrw     stval, t0
     
     REG_L    x5, 4*REGBYTES(sp)
+    addi    sp, sp, 35*REGBYTES
 .endm
 
 .macro  RESTORE_SP_AND_SRET
@@ -210,6 +215,11 @@ extern_interrupt:
     jr      t2
     // 以上代码模拟了80386的中断过程
     // sscratch的栈中存着t1、t2、原sp
+
+.global trap_vector
+.align 2    //  4 bytes 对齐
+all_trap_return:
+    RESTORE_SP_AND_SRET
     
 
 //  Linux 0.12中所有的错误处理流程如下
@@ -222,6 +232,9 @@ extern_interrupt:
 //  (但是如果是双错误也能打印吗?)
 //  (我们实现的时候, 做一个权级的判断)
 //  调用do_exit(11) 发送信号
+
+//  注意压-36的这个操作是临时的, 如果没有在随后用
+//  -1来读出来, 会被其他栈吞掉
 bad_CLINT_trap: //  Bad means should never happpen!
     la      t1, do_bad_CLINT_trap
     sd      t1, -36*REGBYTES(sp)
@@ -231,7 +244,7 @@ general_trap_handle:
     ld      t0, -REGBYTES(sp)
     jalr    t0
     RESTORE_REGS
-    RESTORE_SP_AND_SRET
+    j       all_trap_return
     
 //  暂时放这里, 之后汇总集中声明
 .global default_trap_handler

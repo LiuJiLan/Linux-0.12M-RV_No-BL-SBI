@@ -8,9 +8,9 @@ LDFLAGS    = #-s -x
 CC         = ${CROSS_COMPILE}gcc
 CFLAGS     = -Wall -g -ggdb -nostdlib -fno-builtin \
     -mcmodel=medany -mabi=lp64f -march=rv64imafc \
-    -I../include
+    -I../../include
 CPP         = ${CROSS_COMPILE}cpp -nostdinc \
-            -I../include
+            -I../../include
 
 %.o : %.c
 	$(CC) $(CFLAGS) \
@@ -18,34 +18,24 @@ CPP         = ${CROSS_COMPILE}cpp -nostdinc \
 %.o : %.S
 	@${CC} ${CFLAGS} -c -o $*.o $<
 
-OBJS  = asm.o traps.o
-#sched.o sys_call.o traps.o asm.o fork.o \
-#panic.o printk.o vsprintf.o sys.o exit.o \
-#signal.o mktime.o
+OBJS  = tty_io.o #console.o keyboard.o serial.o rs_io.o \
+	#tty_ioctl.o pty.o
 
-kernel.o: $(OBJS)
-	$(LD) -r -o kernel.o $(OBJS)
+chr_drv.a: $(OBJS)
+	$(AR) rcs chr_drv.a $(OBJS)
 	#sync
 
 clean:
 	rm -f *.o tmp_make
     #rm -f core *.o *.a tmp_make keyboard.s
     #for i in *.c;do rm -f `basename $$i .c`.s;done
-	(cd chr_drv; make clean)
-	(cd blk_drv; make clean)
-    #(cd math; make clean)
 
 dep:
 	sed '/\#\#\# Dependencies/q' < Makefile > tmp_make
 	(for i in *.c;do echo -n `echo $$i | sed 's,\.c,\.s,'`" "; \
 		$(CPP) -M $$i;done) >> tmp_make
 	cp tmp_make Makefile
-	(cd chr_drv; make dep)
-	(cd blk_drv; make dep)
-	
+    
 
 ### Dependencies:
-traps.s traps.o: traps.c ../include/arch/types.h ../include/asm/system.h \
- ../include/arch/riscv.h ../include/arch/types.h \
- ../include/linux/config.h ../include/linux/../../platform.h \
- ../include/debug.h
+tty_io.s tty_io.o: tty_io.c

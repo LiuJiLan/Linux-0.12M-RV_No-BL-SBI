@@ -7,6 +7,8 @@
 // 临时放置在这里
 extern void trap_init(void);
 extern void mem_init(size_t start_mem, size_t end_mem);
+extern void blk_dev_init(void);
+extern void chr_dev_init(void);
 
 
 // 注意, 我们用这种方式完成了64bits的对齐
@@ -35,6 +37,9 @@ int main(void){
 #endif
     mem_init(main_memory_start,memory_end);
     trap_init();
+    blk_dev_init();
+    chr_dev_init();
+    ebreak();
     ebreak();
     reach_here("About to spin!");
     while (1) {

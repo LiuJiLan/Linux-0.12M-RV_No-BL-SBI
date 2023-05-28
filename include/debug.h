@@ -6,5 +6,8 @@ inline static void reach_here(const char * str) {
     return;
 }
 
+inline static void gdb_print(const char * str) {
+    return;
+}
 
 #endif /* debug_h */

@@ -125,7 +125,7 @@ ENOSYS = 38
 
 //  注意进入system_call的时候, t1和t2存在sscartch里
 
-
+.align 2
 .global ecall_from_u
 ecall_from_u:
     //模拟x86的情况, 因为x86中属于软中断
@@ -170,4 +170,59 @@ ret_from_sys_call:
 3:  RESTORE_CALLER_REGS
     j       all_trap_return
 
+//  注意, switch_to_asm不需要存储caller
+//  ra的值也不需要担心
+//  因为整个内核有且仅有这一处调用switch
+//  所以ra是一致的。
+//  而switch_to_asm是用C语言调用的, 所以caller都存在栈中
+.align 2
+.global switch_to_asm
+//  a0 and a1
+//  &current->context, &task[n]->context
+switch_to_asm:
+    REG_S    sp, 0*REGBYTES(a0)
+    REG_S    s0, 1*REGBYTES(a0)
+    REG_S    s1, 2*REGBYTES(a0)
+    REG_S    s2, 3*REGBYTES(a0)
+    REG_S    s3, 4*REGBYTES(a0)
+    REG_S    s4, 5*REGBYTES(a0)
+    REG_S    s5, 6*REGBYTES(a0)
+    REG_S    s6, 7*REGBYTES(a0)
+    REG_S    s7, 8*REGBYTES(a0)
+    REG_S    s8, 9*REGBYTES(a0)
+    REG_S    s9, 10*REGBYTES(a0)
+    REG_S    s10, 11*REGBYTES(a0)
+    REG_S    s11, 12*REGBYTES(a0)
+    csrr     t0, sepc
+    csrr     t1, sscratch
+    REG_S    t0, 13*REGBYTES(a0)
+    REG_S    t1, 14*REGBYTES(a0)
+
+    REG_L    sp, 0*REGBYTES(a1)
+    REG_L    s0, 1*REGBYTES(a1)
+    REG_L    s1, 2*REGBYTES(a1)
+    REG_L    s2, 3*REGBYTES(a1)
+    REG_L    s3, 4*REGBYTES(a1)
+    REG_L    s4, 5*REGBYTES(a1)
+    REG_L    s5, 6*REGBYTES(a1)
+    REG_L    s6, 7*REGBYTES(a1)
+    REG_L    s7, 8*REGBYTES(a1)
+    REG_L    s8, 9*REGBYTES(a1)
+    REG_L    s9, 10*REGBYTES(a1)
+    REG_L    s10, 11*REGBYTES(a1)
+    REG_L    s11, 12*REGBYTES(a1)
+    REG_L    t0, 13*REGBYTES(a1)
+    REG_L    t1, 14*REGBYTES(a1)
+
+    csrw     sepc, t0
+    csrw     sscratch, t1
+
+    REG_L    t0, 14*REGBYTES(a1)
+    srli     t0, t0, 12      //  右移, 空位填0
+    li       t1, 0x8 << 60   //  8代表Sv39分页模式
+    or       t0, t0, t1
+    csrw     satp, t0        //  启动分页
+    sfence.vma              //  刷新快表
+
+    ret
 

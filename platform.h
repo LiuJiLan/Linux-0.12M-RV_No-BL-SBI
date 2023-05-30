@@ -21,6 +21,12 @@
 //  vf2的0号核是没有S态的, 所以寄存器安排上我们只写启动核的
 #define BOOT_HART_ID 0
 
+
+//  注意给SBI的时钟中断间隔应该为
+//  TIMEBASE_FREQUENCY / HZ
+#define TIMEBASE_FREQUENCY 4000000UL
+
+
 #define PLIC                    0x0c000000UL
 #define PLIC_V                  P2V_WO(PLIC)
 //  这里的数量不要带上用于标识无中断的0号

@@ -29,8 +29,10 @@ PS: 2 is biggest page level.
 Why VIRTUAL_BASE but no PHYSICAL_BASE?
 Let me explain in the head.S
 */
+
+/*
 PROVIDE(kpg = VIRTUAL_BASE);
-/*PROVIDE(ipg2 = VIRTUAL_BASE + 4096);
+PROVIDE(ipg2 = VIRTUAL_BASE + 4096);
 PROVIDE(ipg1 = VIRTUAL_BASE + 4096*2);
 PROVIDE(ipg0 = VIRTUAL_BASE + 4096*3);*/
 /*

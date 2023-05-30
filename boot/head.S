@@ -29,6 +29,7 @@ for_gdb_physical = V2P_WO(for_gdb_virtual)
  */
 
 entry:
+.global kpg
 kpg:
     // 沿用过去的代码, 真的需要这样做吗?
     csrw    sie, zero

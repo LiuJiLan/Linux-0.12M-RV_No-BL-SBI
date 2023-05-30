@@ -10,18 +10,14 @@ extern void mem_init(size_t start_mem, size_t end_mem);
 extern void blk_dev_init(void);
 extern void chr_dev_init(void);
 
-
-// 注意, 我们用这种方式完成了64bits的对齐
-// 不要使用uint8 user_stack[PAGE_SIZE]来替代
-// 另外, 如果非gcc编译器以及编译优化后是不保证对齐的
-// Linux 0.12中是PAGE_SIZE>>2, 注意是保证4KiB大小
-size_t user_stack [ PAGE_SIZE>>3 ] ;
-
 //  都使用物理地址
 static size_t memory_start = 0;
 static size_t memory_end = 0;
 static size_t buffer_memory_end = 0;
 static size_t main_memory_start = 0;
+
+//  我们把时间相关的东西都放在set_up系统调用中
+//  这样能减少误差, 也能更好的处理时间中断的问题
 
 // ssize_t hartid, ssize_t dtb_addr
 int main(void){

@@ -38,6 +38,7 @@ This repository is a modified version of the Linux kernel 0.12 for the RISC-V ar
 
 - [ ] 硬件探查(bootsect和setup里部分实现了从BIOS获取参数, 而我们应该从dtb中获取, 能做到, 但没时间)
 - [ ] RAMDISK
+- [ ] 使用库文件的系统调用`sys_uselib`
 
 
 

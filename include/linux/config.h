@@ -3,6 +3,6 @@
 
 #include "../../platform.h"
 
-#define NR_SYS_CALL 300
+#define NR_syscalls 300
 
 #endif /* config_h */

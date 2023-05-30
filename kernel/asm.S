@@ -216,7 +216,7 @@ extern_interrupt:
     // 以上代码模拟了80386的中断过程
     // sscratch的栈中存着t1、t2、原sp
 
-.global trap_vector
+.global all_trap_return
 .align 2    //  4 bytes 对齐
 all_trap_return:
     RESTORE_SP_AND_SRET

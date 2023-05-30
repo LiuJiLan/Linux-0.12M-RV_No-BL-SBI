@@ -1,6 +1,6 @@
-#include <linux/sys.h>
+#include <linux/config.h>
 
-nr_system_calls = NR_syscalls
+nr_system_calls = NR_SYS_CALL
 
 ENOSYS = 38
 
@@ -147,7 +147,7 @@ bad_sys_call:
 .align 2
 reschedule:
     la      ra, ret_from_sys_call
-    j       schedule
+    //j       schedule
 .align 2
 system_call:
     SAVE_CALLER_REGS
@@ -159,7 +159,7 @@ system_call:
     slli    t2, a7, 3
     add     t1, t1, t2
     ld      t2, 0(t1)//sys_call_table[a7]
-    beqz    bad_sys_call
+    beqz    t2, bad_sys_call
     jalr    t2
     ld      a0, 0(sp)
 2:

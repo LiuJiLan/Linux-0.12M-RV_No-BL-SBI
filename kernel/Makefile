@@ -18,7 +18,8 @@ CPP         = ${CROSS_COMPILE}cpp -nostdinc \
 %.o : %.S
 	@${CC} ${CFLAGS} -c -o $*.o $<
 
-OBJS  = asm.o traps.o
+OBJS  = sys_call.o asm.o traps.o \
+	sys.o
 #sched.o sys_call.o traps.o asm.o fork.o \
 #panic.o printk.o vsprintf.o sys.o exit.o \
 #signal.o mktime.o
@@ -45,6 +46,8 @@ dep:
 	
 
 ### Dependencies:
+sys.s sys.o: sys.c ../include/linux/sys.h ../include/linux/config.h \
+ ../include/linux/../../platform.h
 traps.s traps.o: traps.c ../include/arch/types.h ../include/asm/system.h \
  ../include/arch/riscv.h ../include/arch/types.h \
  ../include/linux/config.h ../include/linux/../../platform.h \

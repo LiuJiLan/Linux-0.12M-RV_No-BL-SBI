@@ -3,6 +3,87 @@ Linux 0.12M for RISC-V architecture, without bootloader and SBI.
 
 
 
+# 考研上岸后继续写这个项目
+
+## 写给之后的我的笔记:
+
+### blk具体设备驱动要完成以下宏内容:
+
+```c
+#define DEVICE_NAME "名称"												//	仅是名称
+#define DEVICE_INTR do_xx												 //  用SET_INTR(x)设置正确的宏
+#define DEVICE_TIMEOUT xx_timeout								 //	 暂时只有hd设置了hd_timeout, 在定时器中断中被调用, 每次SET_INTR时会重置(本质上是设置一个int值, 遇到200次do_timer就算timeout)
+#define DEVICE_REQUEST do_xx_request						//   后面详细说
+#define DEVICE_NR(device) 以正确方法获得子设备号		 //		如同汉字说明, 汉字说明为宏需要实现的部分
+#define DEVICE_ON(device) 											//		一开机就总是运转着的设备不定义
+#define DEVICE_OFF(device)											//		一开机就总是运转着的设备不定义
+```
+
+```c
+void do_xx_request(void);
+//以下变量来自ll_rw_blk中的request
+//能通过dev = MINOR(CURRENT->dev);获取子设备
+//能通过block = CURRENT->sector;获取相对子设备的sector偏移
+//(例如, 实际使用时用block += hd[dev].start_sect;获得正确的、对于整个硬盘的偏移)
+//通过nsect = CURRENT->nr_sectors;获得要读取的扇区数
+
+//##############################
+//具体来说, 通过do_xx_request做了这样一件事:
+
+//调用INIT_REQUEST;检查当前ll_rw_blk中的所有request是否已经完成
+//如果全部都完成就会退出
+
+//向硬盘发出指令并设置下一次中断
+
+//do_xx_request可能被它所设置的“下一次中断”再次调用
+
+//只要do_xx_request设置的中断函数没有调用end_request, 中断函数可以在失败时再次调用do_xx_request
+//(因为ll_rw_blk中的request的内容未改变)
+
+//可以维护一些静态变量来设置在多次中断函数失败时的操作
+
+//##############################
+//被使用的中断函数:
+//软盘的do_floppy没有使用SET_INTR而是直接赋值, 我不知道为什么会这样
+//本质上在hd的中断处理的汇编段, 完成了从do_hd中获取正确中断函数的过程
+//PS: Linux 0.12的汇编似乎允许直接读取变量到寄存器
+//PS: RISCV的汇编似乎只能获取变量的地址, 在后面的笔记中我会说明这一点
+
+//这些中断函数做以下的事情:
+//1、判断status,成功则继续, 否则重新do_xx_request来重试(涉及到命令的重发), 直接return;
+//2、更新ll_rw_blk中的request, 因为linux 0.12中的hd每处理512Bytes引发一次中断
+//	更新里面的值然后再次设置下一次中断(因为中断处理中的汇编会设中断函数指针为0)
+//	然后直接return; 因为不涉及命令的重发, 发送命令时已经使用了nsect传递要连续读几次
+//	可以优化, 例如virtio的Legacy, 一次就能操作完512的倍数
+//3、处理完了ll_rw_blk中的request后调用end_request表示完成了这个request; 
+//	end_request设置到下一个request。所以再次调用do_xx_request。
+//	(下一个request是不是处理完了所有的request这一点交由do_xx_request来判定)
+```
+
+
+
+### 关于用汇编读变量的问题
+
+Linux 0.12的汇编似乎允许直接读取变量到寄存器; RISCV的汇编似乎只能获取变量的地址(`la 寄存器 变量名` 取内容要load/store一次);
+
+能否考虑设计一个汇编宏来处理? 但是涉及到位宽, 反正遇到这种情况手动添一行注释来说明。
+
+好像前面代码中已经有读变量的部分了, 记得回去找找补上注释。
+
+未来的我切记。
+
+
+
+### 关于switch_to函数
+
+由于要对结构体做访问, 但是结构体的偏移不知道, 只能先用C语言。~~又不太能像原版一样用内联汇编, 因为代码量和宏的问题。~~
+
+其实能用内联汇编, 只不过要写的代码量太大了, 这个地方用这种方法就是最好的选择。
+
+
+
+
+
 **开发过程中, 我会随意用方便的语言书写README, 完成后会重新整理出双语版本。**
 
 *部分用词更多是为了记录开发, 我也实在没有精神去像写一个教程一样精挑细选用词了。所以, 如果有任何你觉得更好的表达, 可以联系我。*
@@ -138,6 +219,20 @@ struct sbi_scratch {
 ```
 
 但, 有无必要进行这种改进, 另说。
+
+其实Linux在实现中用sscratch设置正确的tp, 这里的tp寄存器指向着一些东西(也分用户态用的和内核态用的thread_info结构体)。在我们的实现中, 我们值用sscratch设置sp这单一的一个变量。(理解可能有误)
+
+```c
+/*
+* If coming from userspace, preserve the user thread pointer and load
+* the kernel thread pointer.  If we came from the kernel, the scratch
+* register will contain 0, and we should continue on the current TP.
+*/
+csrrw tp, CSR_SCRATCH, tp
+bnez tp, _save_context
+```
+
+
 
 
 

@@ -118,6 +118,9 @@ extern int jiffies_offset;
 //extern void wake_up(struct task_struct ** p);
 //extern int in_group_p(gid_t grp);
 
+//  由于要对结构体做访问, 但是结构体的偏移不知道,
+//  只能先用C语言
+//  又不太能像原版一样用内联汇编, 因为代码量和宏的问题
 static inline void switch_to(int n) {
     if (current != task[n]) {
         extern void switch_to_asm(struct context*, struct context*);
